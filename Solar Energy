@@ -1,0 +1,50 @@
+import time
+import board
+import busio
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
+
+# Инициализация I2C-шины
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Инициализация ADS1115
+ads = ADS.ADS1115(i2c)
+
+# Аналоговые входы для измерения напряжения и тока
+chan_voltage = AnalogIn(ads, ADS.P0)
+chan_current = AnalogIn(ads, ADS.P1)
+
+# Константа для перевода измеренного напряжения в ток (в зависимости от резистора шунта)
+SHUNT_RESISTOR = 0.1  # Ом
+
+def read_voltage():
+    # Чтение напряжения с солнечной панели
+    voltage = chan_voltage.voltage
+    return voltage
+
+def read_current():
+    # Чтение падения напряжения на шунтовом резисторе и вычисление тока
+    voltage_drop = chan_current.voltage
+    current = voltage_drop / SHUNT_RESISTOR
+    return current
+
+def calculate_power(voltage, current):
+    # Вычисление мощности (P = V * I)
+    power = voltage * current
+    return power
+
+def main():
+    try:
+        while True:
+            voltage = read_voltage()
+            current = read_current()
+            power = calculate_power(voltage, current)
+            print(f"Voltage: {voltage:.2f} V")
+            print(f"Current: {current:.2f} A")
+            print(f"Power: {power:.2f} W")
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Measurement stopped by User")
+
+if __name__ == "__main__":
+    main()
